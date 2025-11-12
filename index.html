@@ -74,7 +74,7 @@
           const gpxReader = new FileReader();
           gpxReader.onload = e => {
             const points = parseGPX(e.target.result);
-            const proximityKm = 2;
+            const proximityKm = 0.1;
             let townsEncountered = [];
 
             points.forEach(pt => {
