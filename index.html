@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GPX Town Finder - Keep Duplicates</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, button { margin: 10px 0; }
+    #results { white-space: pre-wrap; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>GPX Town Finder - Keep Duplicate Towns</h1>
+  <p>Upload a CSV file with town names and coordinates (name,lat,lon), then one or more GPX files to find towns visited in order (including repeats).</p>
+
+  <label for="towns-csv">Upload Towns CSV:</label><br />
+  <input type="file" id="towns-csv" accept=".csv" /><br />
+
+  <label for="gpx-files">Upload GPX Files:</label><br />
+  <input type="file" id="gpx-files" accept=".gpx" multiple /><br />
+
+  <button id="process-btn">Process GPX Files</button>
+
+  <div id="results"></div>
+
+  <script>
+    function parseCSV(text) {
+      const lines = text.trim().split('\\n');
+      return lines.map(line => {
+        const [name, lat, lon] = line.split(',').map(s => s.trim());
+        return { name, lat: parseFloat(lat), lon: parseFloat(lon) };
+      });
+    }
+
+    function parseGPX(gpxText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(gpxText, 'application/xml');
+      const trkpts = Array.from(xml.querySelectorAll('trkpt'));
+      return trkpts.map(pt => ({
+        lat: parseFloat(pt.getAttribute('lat')),
+        lon: parseFloat(pt.getAttribute('lon'))
+      }));
+    }
+
+    // Haversine distance in km
+    function distance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    document.getElementById('process-btn').addEventListener('click', () => {
+      const townsFile = document.getElementById('towns-csv').files[0];
+      const gpxFiles = Array.from(document.getElementById('gpx-files').files);
+
+      if (!townsFile || gpxFiles.length === 0) {
+        alert('Please upload towns CSV and at least one GPX file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        const towns = parseCSV(e.target.result);
+
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '';
+
+        gpxFiles.forEach(gpxFile => {
+          const gpxReader = new FileReader();
+          gpxReader.onload = e => {
+            const points = parseGPX(e.target.result);
+            const proximityKm = 2;
+            let townsEncountered = [];
+
+            points.forEach(pt => {
+              towns.forEach(town => {
+                if (distance(pt.lat, pt.lon, town.lat, town.lon) <= proximityKm) {
+                  townsEncountered.push(town.name);
+                }
+              });
+            });
+
+            // Remove consecutive duplicates to avoid noisy repeats
+            const filteredTowns = townsEncountered.filter((t, i, arr) => i === 0 || t !== arr[i-1]);
+
+            const townsString = filteredTowns.join(' - ');
+            const resultElem = document.createElement('p');
+            resultElem.innerHTML = `<strong>${gpxFile.name}:</strong> ${townsString}`;
+            resultsDiv.appendChild(resultElem);
+          };
+          gpxReader.readAsText(gpxFile);
+        });
+      };
+      reader.readAsText(townsFile);
+    });
+  </script>
+</body>
+</html>
