@@ -25,13 +25,13 @@
   <div id="results"></div>
 
   <script>
-    function parseCSV(text) {
-      const lines = text.trim().split('\r\n');
-      return lines.map(line => {
-        const [name, lat, lon] = line.split(',').map(s => s.trim());
-        return { name, lat: parseFloat(lat), lon: parseFloat(lon) };
-      });
-    } //function parseCSV
+//    function parseCSV(text) {
+  //    const lines = text.trim().split('\r\n');
+    //  return lines.map(line => {
+      //  const [name, lat, lon] = line.split(',').map(s => s.trim());
+        //return { name, lat: parseFloat(lat), lon: parseFloat(lon) };
+//      });
+  //  } //function parseCSV
 
     function parseGPX(gpxText) {
       const parser = new DOMParser();
@@ -54,7 +54,13 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     } //function distance
 
-    document.getElementById('process-btn').addEventListener('click', () => {
+      async function getTowns() {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbxPapZqH6M-bVeiFCtXjYzlMTPlR_86k5X_XCGrB34hES_p7y9GIpSmavdzqb-xFrrohQ/exec?sheet=Villages');
+      towns = await response.json();
+     }
+
+    async function main() {
+      document.getElementById('process-btn').addEventListener('click', () => {
       const townsFile = document.getElementById('towns-csv').files[0];
       const gpxFiles = Array.from(document.getElementById('gpx-files').files);
 
@@ -65,12 +71,8 @@
 
  let towns;
       
-      async function getTowns() {
-      const response = await fetch('https://script.google.com/macros/s/AKfycbxPapZqH6M-bVeiFCtXjYzlMTPlR_86k5X_XCGrB34hES_p7y9GIpSmavdzqb-xFrrohQ/exec?sheet=Villages');
-      towns = await response.json();
-     }
 
-      getTowns();
+      await getTowns();
 
 //       const reader = new FileReader();
  //     reader.onload = e => {
@@ -105,9 +107,15 @@
           }; //gpxReader.onload
           gpxReader.readAsText(gpxFile);
         }); //gpxFiles.forEach
+ 
+                                                              
 //      }; //reader.onload
   //    reader.readAsText(townsFile);
-    });
+    }); //addEventListener('click'
+    } //function main()
+
+    main();
+    
   </script>
 </body>
 </html>
