@@ -12,10 +12,7 @@
 </head>
 <body>
   <h1>GPX Town Finder - Keep Duplicate Towns</h1>
-  <p>Upload a CSV file with town names and coordinates (name,lat,lon), then one or more GPX files to find towns visited in order (including repeats).</p>
-
-  <label for="towns-csv">Upload Towns CSV:</label><br />
-  <input type="file" id="towns-csv" accept=".csv" /><br />
+  <p>Upload one or more GPX files to find towns visited in order (including repeats).</p>
 
   <label for="gpx-files">Upload GPX Files:</label><br />
   <input type="file" id="gpx-files" accept=".gpx" multiple /><br />
@@ -65,11 +62,10 @@
   const towns =  await getTowns();
 
       document.getElementById('process-btn').addEventListener('click', () => {
-      const townsFile = document.getElementById('towns-csv').files[0];
-      const gpxFiles = Array.from(document.getElementById('gpx-files').files);
+     const gpxFiles = Array.from(document.getElementById('gpx-files').files);
 
-      if (!townsFile || gpxFiles.length === 0) {
-        alert('Please upload towns CSV and at least one GPX file.');
+      if (gpxFiles.length === 0) {
+        alert('Please upload at least one GPX file.');
         return;
       }
 
