@@ -91,7 +91,7 @@
             const townsString = filteredTowns.join(' - ');
             const resultElem = document.createElement('p');
             const filenm = gpxFile.name.slice(0, -4);
-            resultElem.innerHTML = `<strong>${Filenm}</strong> ${townsString}`;
+            resultElem.innerHTML = `<strong>${filenm}</strong> ${townsString}`;
             resultsDiv.appendChild(resultElem);
           };
           gpxReader.readAsText(gpxFile);
