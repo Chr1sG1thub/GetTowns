@@ -91,7 +91,7 @@ const path = 'gpx'; // e.g. 'src' or 'docs'
             resultElem.innerHTML = `<strong>${filenm}</strong>,${townsString}<br/>`;
             resultsDiv.appendChild(resultElem);
           }; //gpxReader.onload
-          gpxReader.readAsText(file.download_url);
+          gpxReader.readAsText(file);
         }); //gpxFiles.forEach
  
                                                               
