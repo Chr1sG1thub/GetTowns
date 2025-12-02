@@ -50,55 +50,61 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-    async function main() {
-      
-  const towns =  await getTowns();
+async function main() {
+  const towns = await getTowns();
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '<p>Loading GPX files...</p>';
 
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = '';
+  const owner = 'Chr1sG1thub';
+  const repo = 'TownsOnMap';
+  const path = 'gpx';
+  const branch = 'main'; // Specify branch explicitly
 
-const owner = 'Chr1sG1thub';
-const repo = 'TownsOnMap';
-const path = 'gpx'; // e.g. 'src' or 'docs'
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`);
+    const data = await response.json();
 
+    // Filter for GPX files only
+    const gpxFiles = data.filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.gpx'));
 
+    for (const file of gpxFiles) {
+      try {
+        const fileResponse = await fetch(file.download_url);
+        const gpxText = await fileResponse.text();
+        const points = parseGPX(gpxText);
+        const proximityKm = 0.1;
+        let townsEncountered = [];
 
-  fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`)
-  .then(response => response.json())
-  .then(data => {
-    
-    data.forEach(file => {
-          const gpxReader = new FileReader();
-          gpxReader.onload = e => {
-            const points = parseGPX(e.target.result);
-            const proximityKm = 0.1;
-            let townsEncountered = [];
+        points.forEach(pt => {
+          towns.forEach(town => {
+            if (distance(pt.lat, pt.lon, town.Lat, town.Lon) <= proximityKm) {
+              townsEncountered.push(town.Place);
+            }
+          });
+        });
 
-            points.forEach(pt => {
-              towns.forEach(town => {
-                if (distance(pt.lat, pt.lon, town.Lat, town.Lon) <= proximityKm) {
-                  townsEncountered.push(town.Place);
-                }
-              }); //towns.forEach
-            }); //points.forEach
+        // Remove consecutive duplicates
+        const filteredTowns = townsEncountered.filter((t, i, arr) => i === 0 || t !== arr[i-1]);
+        const townsString = filteredTowns.join(' - ') || 'No towns found';
+        const fileName = file.name.slice(0, -4);
 
-            // Remove consecutive duplicates to avoid noisy repeats
-            const filteredTowns = townsEncountered.filter((t, i, arr) => i === 0 || t !== arr[i-1]);
+        const resultElem = document.createElement('div');
+        resultElem.innerHTML = `<strong>${fileName}</strong>: ${townsString}<br/>`;
+        resultsDiv.appendChild(resultElem);
+      } catch (fileError) {
+        console.error(`Error processing ${file.name}:`, fileError);
+      }
+    }
 
-            const townsString = filteredTowns.join(' - ');
-            const resultElem = document.createElement('span');
-            const filenm = gpxFile.name.slice(0, -4);
-            resultElem.innerHTML = `<strong>${filenm}</strong>,${townsString}<br/>`;
-            resultsDiv.appendChild(resultElem);
-          }; //gpxReader.onload
-          gpxReader.readAsText(file);
-        }); //gpxFiles.forEach
- 
-                                                              
-  })
-  .catch(error => console.error('Error:', error));
-      
-    } //function main()
+    if (gpxFiles.length === 0) {
+      resultsDiv.innerHTML = '<p>No GPX files found in the directory.</p>';
+    }
+  } catch (error) {
+    resultsDiv.innerHTML = `<p>Error loading files: ${error.message}</p>`;
+    console.error('Error:', error);
+  }
+}
+
 
     main();
     
